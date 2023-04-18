@@ -3,6 +3,8 @@ package paxos;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.Registry;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -23,6 +25,22 @@ public class Paxos implements PaxosRMI, Runnable {
     AtomicBoolean unreliable; // for testing
 
     // Your data here
+    //individual instance state info
+    //sequence == -1 means that it is the initial instance
+    int seq = -1;
+    retStatus myStatus;
+    //proposer
+    Object value;
+    int n;
+
+    //acceptor
+    int np = -1;
+    int na = -1;
+    int va = -1;
+
+    //map of all the instances
+    HashMap<Integer, Paxos> instances;
+
 
     /**
      * Call the constructor to create a Paxos peer.
@@ -39,6 +57,7 @@ public class Paxos implements PaxosRMI, Runnable {
         this.unreliable = new AtomicBoolean(false);
 
         // Your initialization code here
+        this.instances = new HashMap<Integer, Paxos>();
 
         // register peers, do not modify this part
         try {
@@ -49,6 +68,15 @@ public class Paxos implements PaxosRMI, Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    //paxos constructor with extra fields so we can pass info to the threads
+    public Paxos(int me, String[] peers, int[] ports, int seq, Object v){
+        this(me, peers, ports);
+        this.seq = seq;
+        this.value = v;
+        this.myStatus = new retStatus(State.Pending, v);
+
     }
 
     /**
@@ -104,6 +132,7 @@ public class Paxos implements PaxosRMI, Runnable {
      */
     public void Start(int seq, Object value) {
         // Your code here
+        //make a new instance and add it to the instances hashMap
     }
 
     @Override
@@ -113,14 +142,26 @@ public class Paxos implements PaxosRMI, Runnable {
 
     // RMI Handler for prepare requests
     public Response Prepare(Request req) {
-        // your code here
-        return null;
+        if(req.n > np){
+            np = req.n;
+            return new Response(true, req.n, na, va);
+        }
+        else {
+            return new Response(false, np);
+        }
     }
 
     // RMI Handler for accept requests
     public Response Accept(Request req) {
-        // your code here
-        return null;
+        if(req.n >= np){
+            np = req.n;
+            na = req.n;
+            va = req.v;
+            return new Response(true, req.n);
+        }
+        else{
+            return new Response(false, np);
+        }
     }
 
     // RMI Handler for decide requests

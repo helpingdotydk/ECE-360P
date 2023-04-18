@@ -11,6 +11,15 @@ import java.io.Serializable;
 public class Request implements Serializable {
     static final long serialVersionUID = 1L;
     // Your data here
+    public int seq;
+    public int n;
+    public int v;
 
     // Your constructor and methods here
+    public Request(int seq, int n, int v){
+        this.seq = seq;
+        this.n = n;
+        this.v = v;
+    }
+
 }
